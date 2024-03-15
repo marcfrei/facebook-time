@@ -31,6 +31,9 @@ const (
 	ptpClkMagic   = '='
 )
 
+// ioctlPTPSysOffsetPrecise is an IOCTL to get precise offset
+var ioctlPTPSysOffsetPrecise = ioctl.IOWR(ptpClkMagic, 8, unsafe.Sizeof(PTPSysOffsetPrecise{}))
+
 // ioctlPTPSysOffsetExtended is an IOCTL to get extended offset
 var ioctlPTPSysOffsetExtended = ioctl.IOWR(ptpClkMagic, 9, unsafe.Sizeof(PTPSysOffsetExtended{}))
 
@@ -54,6 +57,14 @@ type EthtoolTSinfo struct {
 	TXReserved     [3]uint32
 	RXFilters      uint32
 	RXReserved     [3]uint32
+}
+
+// PTPSysOffsetPrecise as defined in linux/ptp_clock.h
+type PTPSysOffsetPrecise struct {
+	Device      PTPClockTime
+	SysRealTime PTPClockTime
+	SysMonoRaw  PTPClockTime
+	Reserved    [4]uint32 /* Reserved for future use. */
 }
 
 // PTPSysOffsetExtended as defined in linux/ptp_clock.h

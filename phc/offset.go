@@ -106,6 +106,17 @@ func TimeAndOffsetFromDevice(device string, method TimeMethod) (SysoffResult, er
 		}
 
 		return SysoffEstimateBasic(ts1, time.Unix(ts.Unix()), ts2), nil
+	case MethodIoctlSysOffsetPrecise:
+		precise, err := ReadPTPSysOffsetPrecise(device)
+		if err != nil {
+			return SysoffResult{}, err
+		}
+		return SysoffResult{
+			SysTime: precise.SysRealTime.Time(),
+			PHCTime: precise.Device.Time(),
+			Delay:   0,
+			Offset:  precise.SysRealTime.Time().Sub(precise.Device.Time()),
+		}, nil
 	case MethodIoctlSysOffsetExtended:
 		extended, err := ReadPTPSysOffsetExtended(device, ExtendedNumProbes)
 		if err != nil {

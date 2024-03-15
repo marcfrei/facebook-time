@@ -52,11 +52,16 @@ type TimeMethod string
 // Methods we support to get time
 const (
 	MethodSyscallClockGettime    TimeMethod = "syscall_clock_gettime"
+	MethodIoctlSysOffsetPrecise  TimeMethod = "ioctl_PTP_SYS_OFFSET_PRECISE"
 	MethodIoctlSysOffsetExtended TimeMethod = "ioctl_PTP_SYS_OFFSET_EXTENDED"
 )
 
 // SupportedMethods is a list of supported TimeMethods
-var SupportedMethods = []TimeMethod{MethodSyscallClockGettime, MethodIoctlSysOffsetExtended}
+var SupportedMethods = []TimeMethod{
+	MethodSyscallClockGettime,
+	MethodIoctlSysOffsetPrecise,
+	MethodIoctlSysOffsetExtended,
+}
 
 func ifaceInfoToPHCDevice(info *EthtoolTSinfo) (string, error) {
 	if info.PHCIndex < 0 {
@@ -106,6 +111,25 @@ func TimeFromDevice(device string) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("failed clock_gettime: %w", err)
 	}
 	return time.Unix(ts.Unix()), nil
+}
+
+// ReadPTPSysOffsetPrecise gets precise time from PHC along with SYS time to measure the call delay.
+func ReadPTPSysOffsetPrecise(device string) (*PTPSysOffsetPrecise, error) {
+	f, err := os.Open(device)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	res := &PTPSysOffsetPrecise{}
+	_, _, errno := unix.Syscall(
+		unix.SYS_IOCTL, f.Fd(),
+		ioctlPTPSysOffsetPrecise,
+		uintptr(unsafe.Pointer(res)),
+	)
+	if errno != 0 {
+		return nil, fmt.Errorf("failed PTP_SYS_OFFSET_PRECISE: %w", errno)
+	}
+	return res, nil
 }
 
 // ReadPTPSysOffsetExtended gets precise time from PHC along with SYS time to measure the call delay.
